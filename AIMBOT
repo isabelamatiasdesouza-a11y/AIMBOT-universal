@@ -1,0 +1,248 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- CONFIG
+local aimEnabled = false
+local aiming = false
+local fov = 120
+local smoothness = 0.1
+local targetPartName = "Head"
+
+-- GUI
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "ArthurUI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 300, 0, 240)
+main.Position = UDim2.new(0.5, -150, 0.5, -120)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+main.BorderSizePixel = 0
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,8)
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(0,170,255)
+stroke.Thickness = 1.5
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,40)
+title.Text = "ARTHUR XITADO"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(0,170,255)
+title.BackgroundTransparency = 1
+title.TextStrokeTransparency = 0.8
+
+-- LINE
+local line = Instance.new("Frame", main)
+line.Size = UDim2.new(0.9,0,0,2)
+line.Position = UDim2.new(0.05,0,0,38)
+line.BackgroundColor3 = Color3.fromRGB(0,170,255)
+line.BorderSizePixel = 0
+
+-- TOGGLE
+local toggle = Instance.new("TextButton", main)
+toggle.Size = UDim2.new(0.9,0,0,40)
+toggle.Position = UDim2.new(0.05,0,0,50)
+toggle.Text = "AIM: OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toggle.TextColor3 = Color3.new(1,1,1)
+
+toggle.MouseButton1Click:Connect(function()
+    aimEnabled = not aimEnabled
+    toggle.Text = aimEnabled and "AIM: ON" or "AIM: OFF"
+
+    TweenService:Create(toggle, TweenInfo.new(0.2), {
+        BackgroundColor3 = aimEnabled and Color3.fromRGB(0,170,255) or Color3.fromRGB(40,40,40)
+    }):Play()
+end)
+
+-- FOV
+local fovLabel = Instance.new("TextLabel", main)
+fovLabel.Position = UDim2.new(0.05,0,0,100)
+fovLabel.Size = UDim2.new(0.9,0,0,20)
+fovLabel.Text = "FOV: "..fov
+fovLabel.TextColor3 = Color3.new(1,1,1)
+fovLabel.BackgroundTransparency = 1
+
+local fovBar = Instance.new("Frame", main)
+fovBar.Position = UDim2.new(0.05,0,0,120)
+fovBar.Size = UDim2.new(0.9,0,0,10)
+fovBar.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+local fovFill = Instance.new("Frame", fovBar)
+fovFill.Size = UDim2.new(fov/300,0,1,0)
+fovFill.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+-- SMOOTH
+local smoothLabel = Instance.new("TextLabel", main)
+smoothLabel.Position = UDim2.new(0.05,0,0,140)
+smoothLabel.Size = UDim2.new(0.9,0,0,20)
+smoothLabel.Text = "SMOOTH: "..smoothness
+smoothLabel.TextColor3 = Color3.new(1,1,1)
+smoothLabel.BackgroundTransparency = 1
+
+local smoothBar = Instance.new("Frame", main)
+smoothBar.Position = UDim2.new(0.05,0,0,160)
+smoothBar.Size = UDim2.new(0.9,0,0,10)
+smoothBar.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+local smoothFill = Instance.new("Frame", smoothBar)
+smoothFill.Size = UDim2.new(smoothness,0,1,0)
+smoothFill.BackgroundColor3 = Color3.fromRGB(0,255,150)
+
+-- TARGET
+local partBtn = Instance.new("TextButton", main)
+partBtn.Size = UDim2.new(0.9,0,0,30)
+partBtn.Position = UDim2.new(0.05,0,0,185)
+partBtn.Text = "TARGET: HEAD"
+partBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+partBtn.TextColor3 = Color3.new(1,1,1)
+
+partBtn.MouseButton1Click:Connect(function()
+    if targetPartName == "Head" then
+        targetPartName = "HumanoidRootPart"
+        partBtn.Text = "TARGET: BODY"
+    else
+        targetPartName = "Head"
+        partBtn.Text = "TARGET: HEAD"
+    end
+end)
+
+-- DRAG
+local dragging, dragStart, startPos
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- SLIDERS
+local draggingFov, draggingSmooth = false, false
+
+fovBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingFov = true
+    end
+end)
+
+smoothBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSmooth = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingFov = false
+        draggingSmooth = false
+    end
+end)
+
+-- FOV CIRCLE
+local circle = Drawing.new("Circle")
+circle.Thickness = 2
+circle.NumSides = 100
+circle.Filled = false
+
+-- INPUT AIM
+UIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = true
+    elseif input.KeyCode == Enum.KeyCode.Insert then
+        main.Visible = not main.Visible
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = false
+    end
+end)
+
+-- TARGET
+local function getClosestTarget()
+    local closest, shortest = nil, fov
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hum = player.Character:FindFirstChild("Humanoid")
+            local part = player.Character:FindFirstChild(targetPartName)
+
+            if hum and hum.Health > 0 and part then
+                local pos, visible = Camera:WorldToViewportPoint(part.Position)
+
+                if visible then
+                    local dist = (Vector2.new(pos.X,pos.Y) - UIS:GetMouseLocation()).Magnitude
+                    if dist < shortest then
+                        shortest = dist
+                        closest = part
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- LOOP
+RunService.RenderStepped:Connect(function()
+    local mouse = UIS:GetMouseLocation()
+
+    -- sliders
+    if draggingFov then
+        local percent = math.clamp((mouse.X - fovBar.AbsolutePosition.X) / fovBar.AbsoluteSize.X, 0, 1)
+        fov = math.floor(percent * 300)
+        fovFill.Size = UDim2.new(percent,0,1,0)
+        fovLabel.Text = "FOV: "..fov
+    end
+
+    if draggingSmooth then
+        local percent = math.clamp((mouse.X - smoothBar.AbsolutePosition.X) / smoothBar.AbsoluteSize.X, 0, 1)
+        smoothness = percent
+        smoothFill.Size = UDim2.new(percent,0,1,0)
+        smoothLabel.Text = "SMOOTH: "..string.format("%.2f", smoothness)
+    end
+
+    circle.Position = mouse
+    circle.Radius = fov
+    circle.Visible = aimEnabled
+
+    if not aimEnabled or not aiming then return end
+
+    local target = getClosestTarget()
+    if target then
+        Camera.CFrame = Camera.CFrame:Lerp(
+            CFrame.new(Camera.CFrame.Position, target.Position),
+            smoothness
+        )
+    end
+end)
